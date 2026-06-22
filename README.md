@@ -1,5 +1,4 @@
 # API Throttle
-
-A simple API throttle implementation in Python.
+A Python library for throttling API requests.
 
 ## Installation
