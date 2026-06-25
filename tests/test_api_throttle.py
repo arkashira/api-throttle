@@ -1,39 +1,43 @@
 import pytest
-import time
-from api_throttle import Throttle
+from api_throttle import ApiThrottle, Response, StatusCode
 
-def test_throttle():
-    throttle = Throttle(5, 1)
-    def example_func():
-        pass
-    throttled_func = throttle(example_func)
-    for _ in range(5):
-        throttled_func()
-    # Test that the 6th call waits
-    start_time = time.time()
-    throttled_func()
-    end_time = time.time()
-    assert end_time - start_time > 0.1
+def test_exponential_backoff():
+    throttle = ApiThrottle()
+    throttle.backoff_interval = 1
+    throttle.exponential_backoff()
+    assert throttle.backoff_interval == 2
 
-def test_metrics():
-    throttle = Throttle(5, 1)
-    metrics = throttle.get_metrics()
-    assert metrics['concurrency_limit'] == 5
-    assert metrics['rate'] == 1
-    assert metrics['current_usage'] == 5  # Changed from 0 to 5
+def test_exponential_backoff_with_jitter():
+    throttle = ApiThrottle()
+    throttle.backoff_interval = 1
+    original_backoff_interval = throttle.backoff_interval
+    throttle.exponential_backoff()
+    assert throttle.backoff_interval > original_backoff_interval
 
-def test_concurrency_limit():
-    throttle = Throttle(5, 1)
-    def example_func():
-        pass
-    throttled_func = throttle(example_func)
-    import threading
-    threads = []
-    for _ in range(10):
-        thread = threading.Thread(target=throttled_func)
-        thread.start()
-        threads.append(thread)
-    for thread in threads:
-        thread.join()
-    metrics = throttle.get_metrics()
-    assert metrics['current_usage'] <= 5
+def test_retry():
+    throttle = ApiThrottle()
+    response = Response(StatusCode.TOO_MANY_REQUESTS.value)
+    new_response = throttle.retry(response)
+    assert new_response.status_code == StatusCode.TOO_MANY_REQUESTS.value
+
+def test_retry_max_retries():
+    throttle = ApiThrottle(max_retries=1)
+    response = Response(StatusCode.TOO_MANY_REQUESTS.value)
+    new_response = throttle.retry(response)
+    assert new_response.status_code == StatusCode.TOO_MANY_REQUESTS.value
+    new_response = throttle.retry(response)
+    assert new_response is None
+
+def test_request_with_retry():
+    throttle = ApiThrottle()
+    response = throttle.request_with_retry()
+    assert response.status_code == StatusCode.TOO_MANY_REQUESTS.value
+
+def test_request_with_retry_success():
+    class MockApiThrottle(ApiThrottle):
+        def make_request(self):
+            return Response(StatusCode.SUCCESS.value)
+
+    throttle = MockApiThrottle()
+    response = throttle.request_with_retry()
+    assert response.status_code == StatusCode.SUCCESS.value

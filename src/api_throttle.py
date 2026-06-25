@@ -1,47 +1,48 @@
+import random
 import time
 from dataclasses import dataclass
-from threading import Lock
-from functools import wraps
+from enum import Enum
+from typing import Optional
+
+class StatusCode(Enum):
+    SUCCESS = 200
+    TOO_MANY_REQUESTS = 429
 
 @dataclass
-class TokenBucket:
-    capacity: int
-    rate: int
-    current_amount: int = 0
-    last_update: float = 0
+class Response:
+    status_code: int
 
-    def get_token(self):
-        now = time.time()
-        elapsed = now - self.last_update
-        self.last_update = now
-        self.current_amount = min(self.capacity, self.current_amount + elapsed * self.rate)
-        if self.current_amount < 1:
-            return False
-        self.current_amount -= 1
-        return True
+class ApiThrottle:
+    def __init__(self, max_backoff: int = 60, max_retries: int = 5):
+        self.max_backoff = max_backoff
+        self.max_retries = max_retries
+        self.retry_count = 0
+        self.backoff_interval = 1
 
-    def wait_for_token(self):
-        while not self.get_token():
-            time.sleep(0.1)
+    def exponential_backoff(self) -> None:
+        jitter = random.uniform(-0.1, 0.1)
+        backoff_interval_with_jitter = self.backoff_interval * (1 + jitter)
+        time.sleep(backoff_interval_with_jitter)
+        self.backoff_interval = min(self.backoff_interval * 2, self.max_backoff)
 
-class Throttle:
-    def __init__(self, concurrency_limit, rate):
-        self.concurrency_limit = concurrency_limit
-        self.rate = rate
-        self.token_bucket = TokenBucket(concurrency_limit, rate)
-        self.lock = Lock()
+    def retry(self, response: Response) -> Optional[Response]:
+        if response.status_code == StatusCode.TOO_MANY_REQUESTS.value:
+            if self.retry_count < self.max_retries:
+                self.exponential_backoff()
+                self.retry_count += 1
+                # Simulate a new request
+                return Response(StatusCode.TOO_MANY_REQUESTS.value)
+            else:
+                return None
+        else:
+            self.retry_count = 0
+            self.backoff_interval = 1
+            return response
 
-    def __call__(self, func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            with self.lock:
-                self.token_bucket.wait_for_token()
-            return func(*args, **kwargs)
-        return wrapper
+    def make_request(self) -> Response:
+        # Simulate a request
+        return Response(StatusCode.TOO_MANY_REQUESTS.value)
 
-    def get_metrics(self):
-        return {
-            'concurrency_limit': self.concurrency_limit,
-            'current_usage': self.token_bucket.capacity - self.token_bucket.current_amount,
-            'rate': self.rate
-        }
+    def request_with_retry(self) -> Optional[Response]:
+        response = self.make_request()
+        return self.retry(response)
