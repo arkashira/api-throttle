@@ -1,71 +1,101 @@
 <h3 align="center">🛠️ api-throttle</h3>
-
 <div align="center">
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-  [![Build Status](https://img.shields.io/badge/Build-passing-green.svg)](https://github.com/axentx/api-throttle)
-  [![Stars](https://img.shields.io/github/stars/axentx/api-throttle?style=social)](https://github.com/axentx/api-throttle)
+  <a href="https://github.com/axentx/api-throttle/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"/></a>
+  <a href="https://github.com/axentx/api-throttle"><img src="https://img.shields.io/github/languages/top/axentx/api-throttle?color=blue" alt="Language"/></a>
+  <a href="https://github.com/axentx/api-throttle/actions/workflows/test.yml"><img src="https://github.com/axentx/api-throttle/actions/workflows/test.yml/badge.svg" alt="Build"/></a>
+  <a href="https://github.com/axentx/api-throttle/stargazers"><img src="https://img.shields.io/github/stars/axentx/api-throttle?style=social" alt="Stars"/></a>
 </div>
 
 ---
 
 # 🚀 api-throttle
-**Power Python developers with intelligent API rate limiting and handling.** A lightweight Python library that provides exponential backoff with jitter for retrying HTTP 429 (Too Many Requests) responses.
+
+**Empower Python developers with intelligent rate-limiting for external API integrations.**
 
 ## Why api-throttle?
-- **Reliable**: Implements proven exponential backoff algorithm to handle rate limiting gracefully
-- **Efficient**: Adds random jitter to prevent thundering herd problems when multiple clients retry simultaneously
-- **Smart**: Automatically respects Retry-After headers from API responses for optimal retry timing
-- **Simple**: Clean, intuitive API that wraps around your existing HTTP calls with minimal code changes
-- **Tested**: Comprehensive test suite ensures reliability across different rate limiting scenarios
-- **Lightweight**: Minimal dependencies and optimized for performance in production environments
-- **Flexible**: Configurable parameters to match different API rate limiting policies
+
+- **Smart Retries**: Implements exponential backoff with jitter to prevent thundering herd issues.
+- **Retry-After Support**: Respects the `Retry-After` header from HTTP 429 responses for smarter retry timing.
+- **Lightweight & Simple**: Minimal overhead with clean, reusable utility functions for wrapping API calls.
+- **Sandbox Tested**: Real-world tested in simulated environments to ensure reliability.
+- **Developer-Focused**: Built for Python developers integrating with third-party APIs that enforce rate limits.
+- **Production Ready**: Designed for use in production systems where robustness matters.
+- **Well Documented**: Clear documentation and examples included for easy adoption.
 
 ## Feature Overview
-| Feature | Description |
-|---------|-------------|
-| Exponential Backoff | Automatically increases wait time between retries to avoid overwhelming APIs |
-| Random Jitter | Adds randomness to retry timing to prevent synchronized retry attempts |
-| Retry-After Support | Parses and respects Retry-After headers from API responses |
-| Customizable Retries | Configurable maximum retry attempts and base wait time |
-| Decorator Interface | Simple decorator to wrap existing API functions with rate limiting |
-| Context Manager | Alternative usage pattern with context manager for fine-grained control |
-| Logging Support | Built-in logging for monitoring retry attempts and rate limiting events |
+
+| Feature                  | Description                                                                 |
+|--------------------------|-----------------------------------------------------------------------------|
+| Exponential Backoff      | Gradually increases delay between retries to reduce load on APIs.          |
+| Jitter Addition          | Randomizes delays to avoid synchronized retry storms.                      |
+| Retry-After Header       | Uses server-provided retry timing when available.                          |
+| Easy Integration         | Simple decorator and function wrappers for API call decoration.            |
+| Test Coverage            | Full test suite using pytest ensures stability and correctness.            |
 
 ## Tech Stack
-- Python 3.8+
-- Poetry for dependency management
-- pytest for testing
+
+- **Python**: Core implementation language.
+- **Poetry**: Dependency management and packaging.
+- **pytest**: Testing framework for unit and integration tests.
 
 ## Project Structure
+
 ```
 api-throttle/
-├── business/          # Business logic and requirements
-├── docs/             # Documentation files
-├── src/              # Source code
-└── tests/            # Test suite
+├── business/           # Business logic or domain-specific code (if any)
+├── docs/               # Documentation files
+├── src/                # Source code root
+│   └── api_throttle/   # Main module
+├── tests/              # Unit and integration tests
+├── pyproject.toml      # Project configuration and dependencies
+└── README.md           # This file
 ```
 
 ## Getting Started
-Install the library using Poetry:
+
+Install the package using Poetry:
 
 ```bash
-poetry add api-throttle
+poetry install
 ```
 
-Basic usage example:
+Run the tests:
+
+```bash
+poetry run pytest tests/
+```
+
+Use in your Python project:
 
 ```python
-from api_throttle import throttle_api_call
+from api_throttle import with_retry
 
-@throttle_api_call(max_retries=3)
-def make_api_call(url):
-    # Your API call logic here
+@with_retry(max_retries=5, base_delay=1)
+def fetch_data(url):
     response = requests.get(url)
     return response.json()
 ```
 
-Run tests:
+## Deploy
+
+This project is a Python library intended for installation via Poetry or pip. No deployment steps required beyond publishing to PyPI or installing locally.
+
+To publish to PyPI:
 
 ```bash
-po
+poetry build
+poetry publish
+```
+
+## Status
+
+📦 Early-stage development.  
+Latest commit: `810edaf` — *readme-keeper: generate proper project README*
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
